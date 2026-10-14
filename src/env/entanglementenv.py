@@ -29,6 +29,11 @@ class Metrics:
         self.total_reached_satellites = 0
         self.total_reached_ground_stations = 0
         self.total_resources = 0
+        # Extra links burned by agent-chosen purification (i.e. beyond the one link per
+        # hop that routing needs anyway), split by outcome.
+        self.total_purification_resources = 0
+        self.total_success_purification_resources = 0
+        self.total_purification_rounds_requested = 0
         self.total_success_packets = 0
         self.total_target_packets = 0
         self.total_packets = 0
@@ -140,6 +145,9 @@ class EntanglementEnv(NetworkEnv):
         n_pseudo_targets: int = None,
         limit_flooding: bool = False,
         detailed_eval: bool = False,
+        max_purification_rounds: int = 0,
+        purification_cost_weight: float = 0.0,
+        reward_type: str = "fidelity",
     ):
         """
         Initialize the environment.
@@ -255,12 +263,27 @@ class EntanglementEnv(NetworkEnv):
         self.enable_action_mask = True
         self.enable_fine_action_mask = enable_action_mask
 
-        self.action_space = Discrete(
-            self.network.neighbor_count + 1, start=0
-        )  # {0, 1, 2, 3} using gym action space
-        self.action_mask = np.zeros(
-            (n_data, self.network.neighbor_count + 1), dtype=bool
-        )
+        # --- joint routing + purification action space -------------------------------
+        # max_purification_rounds == 0 reproduces the original action space exactly
+        # (1 idle action + one action per outgoing edge). For P > 0 every edge is
+        # expanded into P + 1 actions, one per number of purification rounds the agent
+        # wants to spend on that hop, so routing and purification are a single decision.
+        #
+        #   action 0                     -> idle
+        #   action 1 + e * L + r         -> take edge e with r purification rounds
+        #   with L = max_purification_rounds + 1 (purification levels per edge)
+        self.max_purification_rounds = max(0, int(max_purification_rounds))
+        self.purification_levels = self.max_purification_rounds + 1
+        self.purification_cost_weight = purification_cost_weight
+        assert reward_type in ("fidelity", "ratio"), reward_type
+        self.reward_type = reward_type
+        n_actions = 1 + self.network.neighbor_count * self.purification_levels
+
+        self.action_space = Discrete(n_actions, start=0)
+        self.action_mask = np.zeros((n_data, n_actions), dtype=bool)
+
+        # extra links consumed by purification, per agent, for the current request
+        self.agent_purification_resources = np.zeros(self.n_requests)
 
         self.eval_info_enabled = False
         self.debug_info_enabled = False
@@ -287,6 +310,25 @@ class EntanglementEnv(NetworkEnv):
         """
         self.eval_info_enabled = val
 
+    def decode_action(self, action):
+        """
+        Split a joint action into (edge index, purification rounds).
+
+        Returns (-1, 0) for the idle action. With max_purification_rounds == 0 this is
+        the identity mapping of the original action space, i.e. edge = action - 1.
+        """
+        action = int(action)
+        if action <= 0:
+            return -1, 0
+        action -= 1
+        return action // self.purification_levels, action % self.purification_levels
+
+    def encode_action(self, edge_index, purification_rounds=0):
+        """Inverse of :meth:`decode_action`."""
+        if edge_index < 0:
+            return 0
+        return 1 + edge_index * self.purification_levels + purification_rounds
+
     def _calculate_action_mask(self, request, index):
         self.action_mask[index] = 0
 
@@ -306,18 +348,24 @@ class EntanglementEnv(NetworkEnv):
             self.action_mask[index, 0] = 1
 
         if request.now != request.target or not self.force_fairness:
+            levels = self.purification_levels
             for edge_i in range(self.network.neighbor_count):
+                lo = offset + edge_i * levels
+                hi = lo + levels
                 if edge_i < len(self.network.get_nodes(self.env_id)[request.now].edges):
                     e = self.network.get_nodes(self.env_id)[request.now].edges[edge_i]
                     if self.enable_fine_action_mask:
-                        self.action_mask[index, offset + edge_i : offset + (edge_i + 1)] = (
-                            self.network.edges[e].get_other_node(request.now)
-                            in request.visited_nodes
-                        ) or len(self.network.edges[e].links) - self.network.edges[e].get_total_reservations() <= 0
+                        edge = self.network.edges[e]
+                        revisits = edge.get_other_node(request.now) in request.visited_nodes
+                        available = len(edge.links) - edge.get_total_reservations()
+                        # r purification rounds consume r + 1 links on this edge, so a
+                        # level is only legal if that many unreserved links are there.
+                        for r in range(levels):
+                            self.action_mask[index, lo + r] = revisits or available < r + 1
                     else:
-                        self.action_mask[index, offset + edge_i : offset + (edge_i + 1)] = 0
+                        self.action_mask[index, lo:hi] = 0
                 else:
-                    self.action_mask[index, offset + edge_i : offset + (edge_i + 1)] = 1
+                    self.action_mask[index, lo:hi] = 1
 
     def reset_request(self, packet: LinkRequest, index: int):
         """
@@ -393,6 +441,20 @@ class EntanglementEnv(NetworkEnv):
             shortest_path_weight=1,
             creation_step=creation_step,
         )
+        if self.reward_type == "ratio":
+            # shortest hop count of this request; normalises the ratio reward so that a
+            # shortest-path delivery without purification earns the upstream reward
+            try:
+                packet.min_hops = max(
+                    nx.shortest_path_length(self.network.G, packet.start, packet.target), 1
+                )
+            except (nx.NetworkXNoPath, nx.NodeNotFound):
+                packet.min_hops = 1
+        if self.max_purification_rounds > 0:
+            # RT-RELiQ: the schedule is built hop by hop from the agent's actions, so a
+            # recycled request must start empty. (Upstream never clears it; RELiQ's
+            # schedule is always empty and qpath/qleap overwrite it when planning.)
+            packet.distillations = []
 
         if self.policy is not None:
             if hasattr(self.policy, "first_step"):
@@ -453,6 +515,7 @@ class EntanglementEnv(NetworkEnv):
 
             self.agent_steps = np.zeros(self.n_requests)
             self.agent_resources = np.zeros(self.n_requests)
+            self.agent_purification_resources = np.zeros(self.n_requests)
 
             if self.env_id == 0:
                 self.network.reset()
@@ -904,7 +967,7 @@ class EntanglementEnv(NetworkEnv):
 
             # select outgoing edge (act == 0 is idle)
             if request.edge == -1 and act[i] > 0:
-                chosen_edge = (act[i] - 1)
+                chosen_edge, purification_rounds = self.decode_action(act[i])
 
                 if chosen_edge < len(self.network.get_nodes(self.env_id)[request.now].edges):
                     t = self.network.get_nodes(self.env_id)[request.now].edges[chosen_edge]
@@ -929,7 +992,10 @@ class EntanglementEnv(NetworkEnv):
                                     self.network.total_active_quantum_links -= 1
                     if self.end_swap_only:
                         if not (self.env_id, i) in edge.reserved_links:
-                            edge.reserved_links[(self.env_id, i)] = LinkReservation(1)
+                            # r purification rounds need r + 1 links on this edge
+                            edge.reserved_links[(self.env_id, i)] = LinkReservation(
+                                1 + purification_rounds
+                            )
 
                     self.network.min_active_quantum_links = min(self.network.min_active_quantum_links, len(edge.links))
 
@@ -968,6 +1034,13 @@ class EntanglementEnv(NetworkEnv):
 
                         request.visited_nodes.add(request.now)
                         request.path.append(request.now)
+                        if self.max_purification_rounds > 0:
+                            # RT-RELiQ: the agent's choice becomes the per-hop schedule;
+                            # entry j is the rounds for hop path[j] -> path[j + 1]
+                            request.distillations.append(purification_rounds)
+                            self.done_metrics.total_purification_rounds_requested += (
+                                purification_rounds
+                            )
                 else:
                     # reward[i] -= 1
                     act[i] = 0
@@ -1053,6 +1126,7 @@ class EntanglementEnv(NetworkEnv):
                 if self.end_swap_only:
                     if has_reached_target:
                         self.agent_resources[i] = 0
+                        self.agent_purification_resources[i] = 0
                         end_to_end_established = True
 
                         for j in range(len(request.path) - 1):
@@ -1064,7 +1138,9 @@ class EntanglementEnv(NetworkEnv):
                                     edge_taken = self.network.edges[edge_id]
                                     break
                             if edge_taken is not None:
-                                if len(request.distillations) > 0:
+                                # extra links burned purifying this hop (0 if none)
+                                purification_consumed = 0
+                                if j < len(request.distillations):
                                     # Perform distillation
                                     distilled_link = None
                                     if request.distillations[j] > 0:
@@ -1073,6 +1149,7 @@ class EntanglementEnv(NetworkEnv):
                                                 break
                                             link_for_distillation = edge_taken.links[-1]
                                             edge_taken.links.remove(link_for_distillation)
+                                            purification_consumed += 1
 
                                             if distilled_link is None:
                                                 distilled_link = link_for_distillation
@@ -1080,6 +1157,15 @@ class EntanglementEnv(NetworkEnv):
                                                 distilled_link = QuantumLink.create_distillation(distilled_link, link_for_distillation, self.network.env_steps * self.network.delta_time)
                                         if distilled_link is not None:
                                             edge_taken.links.append(distilled_link)
+                                            # the surviving link is put back and is
+                                            # charged below as the hop's own link
+                                            purification_consumed -= 1
+                                    if purification_consumed > 0:
+                                        # tracked separately; agent_resources keeps the
+                                        # upstream definition (one link per hop)
+                                        self.agent_purification_resources[i] += (
+                                            purification_consumed
+                                        )
 
                                 selected_link_index = len(edge_taken.links) - 1
 
@@ -1113,6 +1199,7 @@ class EntanglementEnv(NetworkEnv):
                             request.link = None
                     else:
                         self.agent_resources[i] = 0
+                        self.agent_purification_resources[i] = 0
 
                 has_reached_target &= request.link is not None and request.link.fidelity > QuantumLink.FIDELITY_THRESHOLD
 
@@ -1125,8 +1212,29 @@ class EntanglementEnv(NetworkEnv):
 
                 if request.now == request.target:
                     reward[i] = max(request.link.fidelity if request.link is not None else 0, QuantumLink.FIDELITY_THRESHOLD)
+                    if self.reward_type == "ratio":
+                        # fidelity per quantum link consumed by this request (routing +
+                        # its own purification), scaled by the request's shortest hop
+                        # count. The denominator is at least the hops travelled, so a
+                        # swap chain that breaks early cannot earn more than a full
+                        # delivery: reward <= max(fidelity, 0.5) <= 1.
+                        links_used = max(
+                            self.agent_resources[i] + self.agent_purification_resources[i],
+                            len(request.path) - 1,
+                            1,
+                        )
+                        reward[i] *= getattr(request, "min_hops", 1) / links_used
                 else:
                     reward[i] = 0
+
+                # Charge the agent for the links its purification choices burned.
+                # Without this the joint action space is strictly permissive and the
+                # greedy optimum is to always purify the maximum number of rounds.
+                if self.purification_cost_weight != 0:
+                    reward[i] -= (
+                        self.purification_cost_weight
+                        * self.agent_purification_resources[i]
+                    )
 
                 self.done_metrics.reward += reward[i]
 
@@ -1149,18 +1257,21 @@ class EntanglementEnv(NetworkEnv):
                     self.done_metrics.max_success_path_length = max(self.agent_steps[i], self.done_metrics.max_success_path_length)
                     self.done_metrics.last_successful_link = self.network.env_steps
                     self.done_metrics.total_success_resources += self.agent_resources[i]
+                    self.done_metrics.total_success_purification_resources += self.agent_purification_resources[i]
 
                     delays_arrived.append(self.agent_steps[i])
                     self.done_metrics.fidelities_arrived.append(request.link.fidelity)
 
                 self.done_metrics.total_packets += 1
                 self.done_metrics.total_resources += self.agent_resources[i]
+                self.done_metrics.total_purification_resources += self.agent_purification_resources[i]
 
                 if request.link is not None:
                     fidelities.append(request.link.fidelity)
 
                 self.agent_steps[i] = 0
                 self.agent_resources[i] = 0
+                self.agent_purification_resources[i] = 0
 
         if self.render_episode == self.episode:
             self.render(done=done, success=success)
@@ -1304,6 +1415,32 @@ class EntanglementEnv(NetworkEnv):
         if self.done_metrics.total_success_packets > 0:
             info["resources_for_and_per_success"] = self.done_metrics.total_success_resources / self.done_metrics.total_success_packets / (self.n_envs if self.network.eval else 1)
             info["resources_per_success"] = self.done_metrics.total_resources / self.done_metrics.total_success_packets / (self.n_envs if self.network.eval else 1)
+
+        # --- purification accounting (new metrics only; upstream ones above unchanged) ---
+        # resources_per_success keeps its upstream meaning: one link per hop taken. The
+        # links burned by purification are reported separately, per mechanism:
+        #   agent : rounds chosen by RT-RELiQ (or planned by qpath/qleap)
+        #   auto  : the network's automatic distillation (RELiQ)
+        # total_links_per_success = routing + agent + auto is the like-for-like cost.
+        env_scale = self.n_envs if self.network.eval else 1
+        auto_consumed = getattr(self.network, "auto_distillation_links_consumed", 0)
+        info["purification_links_agent"] = self.done_metrics.total_purification_resources / env_scale
+        info["purification_rounds_requested"] = self.done_metrics.total_purification_rounds_requested / env_scale
+        if self.env_id == 0:
+            info["purification_links_auto"] = auto_consumed / env_scale
+        if self.done_metrics.total_success_packets > 0:
+            successes = self.done_metrics.total_success_packets
+            info["purification_links_agent_per_success"] = (
+                self.done_metrics.total_purification_resources / successes / env_scale
+            )
+            if self.env_id == 0:
+                info["purification_links_auto_per_success"] = auto_consumed / successes / env_scale
+                info["total_links_per_success"] = (
+                    self.done_metrics.total_resources
+                    + self.done_metrics.total_purification_resources
+                    + auto_consumed
+                ) / successes / env_scale
+
         info["max_episode_path_length_" + str(self.env_id)] = self.done_metrics.max_success_path_length
         info["max_episode_path_length_in_diameter_" + str(self.env_id)] = (
             self.done_metrics.max_success_path_length / self.network.get_diameter()

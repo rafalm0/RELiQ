@@ -345,6 +345,13 @@ class QuantumNetwork:
 
         self.auto_distillation_threshold = auto_distillation_threshold
 
+        # Quantum links consumed by automatic (network-side) distillation.
+        # This cost is invisible to EntanglementEnv.agent_resources, which only counts
+        # the links a request consumes itself, so it is tracked separately to allow a
+        # fair comparison between auto-purification and agent-controlled purification.
+        self.auto_distillation_links_consumed = 0
+        self.auto_distillation_events = 0
+
         self.transmitted_messages = 0
         self.transmitted_message_load_edges = {}
         self.transmitted_message_load_nodes = {}
@@ -656,6 +663,13 @@ class QuantumNetwork:
             edge.links = edge.links[1:]
 
     def perform_auto_distillation(self, edge, time):
+        # Explicit no-op when auto-purification is disabled. With a threshold of 0 the
+        # loops below were already vacuous, but returning early makes the disabled case
+        # unambiguous (and cheap) for the RL-controlled purification experiments.
+        if self.auto_distillation_threshold <= 0:
+            return
+
+        links_before = len(edge.links)
         start_links = len(edge.links)
         low_quality_links = []
         low_quality_created_links = []
@@ -690,6 +704,13 @@ class QuantumNetwork:
             edge.links.append(current_distilled_link)
             start_links += 1
             current_distilled_link = None
+
+        # Net links destroyed by this call: every pair merged costs one link, so the
+        # drop in edge occupancy is exactly the resource cost of auto-purification.
+        consumed = links_before - len(edge.links)
+        if consumed > 0:
+            self.auto_distillation_links_consumed += consumed
+            self.auto_distillation_events += 1
 
     def initialize_quantum_links(self):
         if self.eval:
@@ -1505,6 +1526,9 @@ class QuantumNetwork:
         self.transmitted_messages = 0
         self.transmitted_message_load_edges = {}
         self.transmitted_message_load_nodes = {}
+
+        self.auto_distillation_links_consumed = 0
+        self.auto_distillation_events = 0
 
         if nx.is_connected(self.G):
             self.diameter = nx.diameter(self.G)

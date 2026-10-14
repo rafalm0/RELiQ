@@ -46,6 +46,7 @@ def evaluate(
     policies = None,
     detailed_eval: bool = True,
     load_metrics: bool = False,
+    eval_seed_offset: int = 0,
 ):
     previous_metrics = None
     if load_metrics:
@@ -77,13 +78,19 @@ def evaluate(
         if isinstance(env.get(), EntanglementEnv) and output_dir is not None:
             if env.get().render_episode >= 0:
                 env.get().figure_path = os.path.join(output_dir, "video")
-            Path(env.get().figure_path).mkdir(exist_ok=True, parents=True)
+            # figure_path stays None unless rendering was requested (--render /
+            # --figure-path); creating it unconditionally crashed every evaluation
+            # that did not render.
+            if env.get().figure_path is not None:
+                Path(env.get().figure_path).mkdir(exist_ok=True, parents=True)
 
             env.get().network.random_neighbors = False
             env.get().network.eval = True
 
-            env.get().network.provided_seeds = EVAL_SEEDS
-            env.get().network.seeds = EVAL_SEEDS
+            # offset 0 (default) is the standard test set; a disjoint offset gives
+            # held-out topologies for model selection
+            env.get().network.provided_seeds = EVAL_SEEDS[eval_seed_offset:]
+            env.get().network.seeds = EVAL_SEEDS[eval_seed_offset:]
             env.get().network.exclude_seeds = []
 
 

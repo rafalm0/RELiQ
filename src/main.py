@@ -193,6 +193,71 @@ parser.add_argument(
     default=0.98,
 )
 parser.add_argument(
+    "--method",
+    type=str,
+    choices=["reliq", "rt-reliq"],
+    help=(
+        "reliq (default): the original RELiQ - the agent only routes and the network "
+        "purifies automatically (--auto-distillation-threshold). Runs the upstream code "
+        "path unchanged. rt-reliq: the agent chooses the number of purification rounds "
+        "per hop jointly with the routing decision and automatic purification is off."
+    ),
+    default="reliq",
+)
+parser.add_argument(
+    "--reward-type",
+    type=str,
+    choices=["fidelity", "ratio"],
+    help=(
+        "fidelity (default, upstream): on reaching the target the agent gets "
+        "max(fidelity, 0.5). ratio: that value times h_min / links, where links are the "
+        "quantum links the request consumed (routing + its own purification) and h_min "
+        "the shortest hop count of the request, so fidelity per link used, on the same "
+        "0.5-1 scale. Available for both methods."
+    ),
+    default="fidelity",
+)
+parser.add_argument(
+    "--eval-seed-offset",
+    type=int,
+    help=(
+        "Evaluate on EVAL_SEEDS[offset:] instead of EVAL_SEEDS[0:]. 0 (default) is the "
+        "standard test set; use a disjoint offset for model selection (validation)."
+    ),
+    default=0,
+)
+parser.add_argument(
+    "--max-purification-rounds",
+    type=int,
+    help=(
+        "RT-RELiQ only. Number of purification rounds the agent may choose per hop; "
+        "every edge action is expanded into P + 1 actions. Default 3 for rt-reliq; "
+        "must be 0 (or unset) for reliq."
+    ),
+    default=None,
+)
+parser.add_argument(
+    "--purification-cost-weight",
+    type=float,
+    help=(
+        "RT-RELiQ only. Reward penalty per extra quantum link consumed by agent-chosen "
+        "purification. "
+        "0 means purification is free, in which case the agent has no reason not to "
+        "purify maximally."
+    ),
+    default=0.0,
+)
+parser.add_argument(
+    "--keep-auto-distillation",
+    help=(
+        "RT-RELiQ only. Keep network-side automatic distillation enabled as well "
+        "(both mechanisms active; for ablations)."
+    ),
+    dest="keep_auto_distillation",
+    action="store_true",
+)
+parser.set_defaults(keep_auto_distillation=False)
+parser.add_argument(
     "--train-topology-allow-eval-seed",
     help="Allow the use of evaluation seeds during training (e.g. for debugging)",
     dest="train_topology_allow_eval_seed",
@@ -663,6 +728,11 @@ if args.config_load_path is not None:
             "no_idle_action",
             "enable_action_mask",
             "fixed_requests",
+            # changes the size of the action space, so it must match the
+            # checkpoint the model head was trained with
+            "method",
+            "max_purification_rounds",
+            "reward_type",
         ]
         for considered_config_value in considered_config_values:
             if considered_config_value in config:
@@ -706,6 +776,12 @@ if args.model_load_path and not args.model_load_no_args:
             "num_attention_layers",
         ],
     )
+    # Added by RT-RELiQ. Restored only when present, so checkpoints written by the
+    # original code (which lack these keys) still load: filter_dict raises KeyError on
+    # missing keys. A checkpoint without them is a RELiQ checkpoint, i.e. the defaults.
+    for key in ("method", "max_purification_rounds", "purification_cost_weight", "reward_type"):
+        if key in loaded_dict["args"]:
+            loaded_model_arg_values[key] = loaded_dict["args"][key]
     loaded_model_arg_values.update({"policy": "trained"})
     set_attributes(args, loaded_model_arg_values)
 
@@ -716,6 +792,40 @@ if args.sequence_length <= 0:
     raise ValueError(
         f"Invalid sequence length {args.sequence_length}. Must be greater 0."
     )
+
+# --- method resolution ------------------------------------------------------------
+# reliq    : original RELiQ. Every value below is exactly what upstream passes, including
+#            the upstream threshold expression (`... != "qpath" and "qleap"` is truthy
+#            for qleap, so only qpath gets 0 here; QLeap/QPath also zero the threshold
+#            in their constructors). Do not "fix" it here - it is the baseline.
+# rt-reliq : the agent chooses purification rounds; automatic purification is off.
+if args.method == "reliq":
+    if args.max_purification_rounds not in (None, 0):
+        parser.error("--max-purification-rounds requires --method rt-reliq")
+    if args.purification_cost_weight != 0:
+        parser.error("--purification-cost-weight requires --method rt-reliq")
+    args.max_purification_rounds = 0
+    auto_distillation_threshold = (
+        args.auto_distillation_threshold if args.policy != "qpath" and "qleap" else 0
+    )
+else:
+    if args.policy != "trained":
+        parser.error("--method rt-reliq requires --policy trained")
+    if args.max_purification_rounds is None:
+        args.max_purification_rounds = 3
+    if args.max_purification_rounds < 1:
+        parser.error("--method rt-reliq requires --max-purification-rounds >= 1")
+    auto_distillation_threshold = (
+        args.auto_distillation_threshold if args.keep_auto_distillation else 0
+    )
+    # record the value that actually ran, so config.json reflects it
+    args.auto_distillation_threshold = auto_distillation_threshold
+
+print(
+    f"> Method: {args.method}  max_purification_rounds={args.max_purification_rounds} "
+    f"cost_weight={args.purification_cost_weight} "
+    f"auto_distillation_threshold={auto_distillation_threshold}"
+)
 
 if args.env_type == "quantum":
     network = QuantumNetwork(
@@ -745,7 +855,7 @@ if args.env_type == "quantum":
         world_width=1600 if args.use_realistic_decay else 2000,
         world_height=1600 if args.use_realistic_decay else 2000,
         initial_fidelity=args.initial_fidelity,
-        auto_distillation_threshold=args.auto_distillation_threshold if args.policy != "qpath" and "qleap" else 0,
+        auto_distillation_threshold=auto_distillation_threshold,
         message_speed=args.message_speed,
     )
 
@@ -781,6 +891,9 @@ if args.env_type == "quantum":
             failure_frequency=args.node_failure_frequency,
             n_pseudo_targets=args.n_pseudo_targets,
             detailed_eval=args.detailed_eval_logs,
+            max_purification_rounds=args.max_purification_rounds,
+            purification_cost_weight=args.purification_cost_weight,
+            reward_type=args.reward_type,
         )
 
     env = create_entanglement_env()
@@ -970,7 +1083,7 @@ if args.eval:
         netmon.eval()
 
     if isinstance(env.get(), EntanglementEnv) and args.random_topology:
-        env.get().network.seeds = EVAL_SEEDS
+        env.get().network.seeds = EVAL_SEEDS[args.eval_seed_offset:]
         env.get().network.sequential_topology_seeds = True
         env.get().network.node_degree = env.get().network.neighbor_count
         env.get().network.eval = True
@@ -995,6 +1108,7 @@ if args.eval:
         policies,
         args.detailed_eval_logs,
         args.continue_eval,
+        eval_seed_offset=args.eval_seed_offset,
     )
     metrics_json = {}
     for metric in metrics:
@@ -1031,7 +1145,10 @@ buff = ReplayBuffer(
     args.seed,
     int(args.capacity),
     n_agents,
-    args.neighbors + 1,
+    # action-space width, not neighbours + 1: with --max-purification-rounds > 0 the
+    # action space is 1 + neighbours * (rounds + 1) and the stored action mask must
+    # match it, otherwise buff.add() fails to broadcast.
+    env.action_space.n,
     agent_obs_size,
     state_len,
     n_nodes,
@@ -1569,7 +1686,11 @@ finally:
                 Path(writer.get_logdir()) / "eval",
                 args.eval_output_detailed,
                 args.output_node_state_aux,
-                args.detailed_eval_logs,
+                # `detailed_eval` is the 11th positional parameter of evaluate();
+                # passing it positionally here bound it to `envs` and made the
+                # post-training evaluation fail with
+                # "'bool' object has no attribute 'insert'".
+                detailed_eval=args.detailed_eval_logs,
             )
             print(json.dumps(metrics, indent=4, sort_keys=True, default=str))
             writer.add_hparams(

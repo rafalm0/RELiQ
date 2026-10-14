@@ -1,2 +1,8 @@
 
 Reliqvenv/
+
+.idea/
+
+src/__pycache__/
+
+reports/
