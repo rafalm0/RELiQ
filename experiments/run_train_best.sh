@@ -4,8 +4,8 @@
 #SBATCH --ntasks-per-node=1   # number of tasks per node
 #SBATCH --cpus-per-task=4  # number of CPU cores per task
 #SBATCH --gpus=1   # gpu devices per node
-#SBATCH --partition=pg   # partition
 #SBATCH --mem=30G   # memory
+#SBATCH --nodelist=speed-[37-42],speed-17,speed-01,speed-03,speed-05
 #SBATCH --mail-type=ALL
 #SBATCH --time=7-00:00:00   # job time limit
 #SBATCH --output=lastlog.out
@@ -22,10 +22,6 @@ pip install -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt
 
 echo "Starting Script"
 
-# Everything below lives in experiments/train_best.sh (bash). Settings can be
-# overridden here with setenv before the call, e.g.:
-#   setenv PHASES "report"
-#   setenv SEEDS "0 1 2 3 4"
 cd /speed-scratch/$USER/QRL/replica/RELiQ
 bash experiments/train_best.sh
 exit $status
