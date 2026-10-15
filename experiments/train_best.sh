@@ -87,6 +87,13 @@ EVAL_EXTRA="${EVAL_EXTRA:-}"
 PHASES="${PHASES:-train validate select test report}"
 PYTHON="${PYTHON:-python}"
 
+# Settings come only from environment variables; refuse anything else so a typo cannot
+# silently train the wrong thing.
+if (( $# > 0 )); then echo "train_best.sh takes no arguments (got: $*); use e.g. METHODS=reliq" >&2; exit 1; fi
+for m in ${METHODS}; do
+  case "$m" in reliq|rt-reliq|reliq-ratio) ;; *) echo "unknown method '$m' in METHODS (reliq, rt-reliq, reliq-ratio)" >&2; exit 1 ;; esac
+done
+
 # --- memory guard ---------------------------------------------------------------------
 # Memory available to this job in GB: Slurm's --mem if set, else MemAvailable.
 mem_limit_gb() {
