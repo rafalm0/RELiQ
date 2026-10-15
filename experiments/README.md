@@ -43,7 +43,7 @@ still counts one link per hop and does **not** include purification. New metrics
 ## Training the best model of each method (`train_best.sh`)
 
 ```bash
-bash experiments/train_best.sh            # on the server; DEVICE=cuda by default
+bash experiments/train_best.sh            # e.g. inside your own sbatch job; DEVICE=cuda by default
 ```
 
 The script trains, selects and evaluates three methods with the RELiQ README recipe
@@ -55,20 +55,41 @@ The script trains, selects and evaluates three methods with the RELiQ README rec
 | `rt-reliq` | agent-chosen purification + ratio reward | `--method rt-reliq --max-purification-rounds 3 --reward-type ratio` |
 | `reliq-ratio` | ablation: RELiQ on the ratio reward | `--reward-type ratio` |
 
-The phases are `train`, `validate`, `select`, `test` and `report`:
+The phases are `train`, `validate`, `select`, `test` and `report`. Every run's
+`model_best.pt` / `model_last.pt` is scored on validation topologies
+`EVAL_SEEDS[500:550]`, and the best run per method is copied to
+`best_models/<method>.pt`. Selected checkpoints are then tested on `EVAL_SEEDS[0:100]`
+(the README evaluation flags, `--use-realistic-decay`). The test set is never used for
+selection.
 
-1. Every run's `model_best.pt` and `model_last.pt` are scored on validation topologies
-   `EVAL_SEEDS[500:550]`.
-2. For each method, the best run is copied to `best_models/<method>.pt`.
-3. Every run's selected checkpoint is tested on `EVAL_SEEDS[0:100]`, the standard test
-   set, using the README evaluation flags (`--use-realistic-decay`).
+**Sequential, one GPU.** `JOBS=1` by default. One training holds about 10.2 GiB of RAM
+(the 100k replay buffer is allocated at start) plus CUDA. If `JOBS × TRAIN_MEM_GB`
+(13 GB each) exceeds the job's `--mem`, `JOBS` is lowered automatically. With
+`--mem=30G`, at most 2 trainings run at once.
 
-The test set is never used for selection. Outputs go to `results/best/`:
-`best_models/`, `selection.json`, and `report/{best_models.png, results.md,
-test_metrics_best.json}`. Finished work is skipped, so the script can be re-run;
-`PHASES="report"` redoes only the plot. The full list of settings is at the top of the
-script (`SEEDS`, `JOBS`, `DEVICE`, `TOTAL_STEPS`, `SELECT_METRIC`, ...).
-`best_models.py` needs only numpy and matplotlib, so the repo `.venv` is enough.
+**Resubmitting continues.** Finished trainings (`model_last.pt`) and finished
+evaluations (`metrics.json`) are skipped. There is no resume inside a training, so a run
+cut off by the time limit restarts from step 0. To avoid that, before each training the
+script compares the time left in the job against the duration of already finished runs
+(`train_seconds`). It doesn't start a training that wouldn't finish while leaving
+`EVAL_RESERVE_HOURS` (12) for evaluation. The time left comes from `squeue`, or from
+`TIME_BUDGET_HOURS` if set; `RUN_HOURS` overrides the duration estimate.
+
+**One job per method.** Use the same `RESULTS_DIR` for all of them:
+
+```bash
+METHODS=reliq       PHASES="train validate" bash experiments/train_best.sh
+METHODS=rt-reliq    PHASES="train validate" bash experiments/train_best.sh
+METHODS=reliq-ratio PHASES="train validate" bash experiments/train_best.sh
+# when all three are done, once:
+PHASES="select test report" bash experiments/train_best.sh
+```
+
+Running select/test/report only once avoids a job reporting before the other methods are
+finished, and two jobs writing the report at the same time. Outputs go to
+`results/best/`: `best_models/`, `selection.json`, and `report/{best_models.png,
+results.md, test_metrics_best.json}`. `best_models.py` needs only numpy and
+matplotlib.
 
 ### Ratio reward (`--reward-type ratio`)
 

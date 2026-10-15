@@ -4,7 +4,7 @@
 #SBATCH --ntasks-per-node=1   # number of tasks per node
 #SBATCH --cpus-per-task=4  # number of CPU cores per task
 #SBATCH --gpus=1   # gpu devices per node
-#SBATCH --mem=30G   # memory
+#SBATCH --mem=20G   # memory
 #SBATCH --nodelist=speed-[37-42],speed-17,speed-01,speed-03,speed-05
 #SBATCH --mail-type=ALL
 #SBATCH --time=7-00:00:00   # job time limit
@@ -23,5 +23,5 @@ pip install -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt
 echo "Starting Script"
 
 cd /speed-scratch/$USER/QRL/replica/RELiQ
-bash experiments/train_best.sh
+bash experiments/train_best.sh --method eliq-ratio
 exit $status
