@@ -69,6 +69,38 @@ def runs(root):
             yield method, int(run_dir.name[4:]), run_dir
 
 
+def with_pooled(metrics):
+    """
+    Replace the per-success cost metrics by pooled ratios over all episodes
+    (total links / total successes). The `_mean` values written by eval.py are means of
+    per-episode ratios, which a single episode with one or two successes can dominate:
+    on the validation runs it gave up to 1514 automatic-purification links per success
+    where the pooled value is ~200.
+    """
+    succ = metrics.get("average_episode_packets")
+    if not isinstance(succ, list) or sum(succ) <= 0:
+        return metrics
+    succ = np.asarray(succ, float)
+    total = succ.sum()
+    out = dict(metrics)
+    rps = metrics.get("resources_per_success")  # listed only for episodes with successes
+    routing = None
+    if isinstance(rps, list) and len(rps) == int((succ > 0).sum()):
+        routing = float(np.dot(rps, succ[succ > 0])) / total
+        out["resources_per_success_mean"] = routing
+    parts = {"purification_links_agent": "purification_links_agent_per_success_mean",
+             "purification_links_auto": "purification_links_auto_per_success_mean"}
+    pooled = {}
+    for src, dst in parts.items():
+        v = metrics.get(src)
+        if isinstance(v, list) and len(v) == len(succ):
+            pooled[dst] = float(np.sum(v)) / total
+            out[dst] = pooled[dst]
+    if routing is not None and len(pooled) == len(parts):
+        out["total_links_per_success_mean"] = routing + sum(pooled.values())
+    return out
+
+
 def score(metrics, metric):
     value = metrics.get(metric)
     if value is None or not np.isfinite(value):
@@ -89,7 +121,7 @@ def cmd_select(args):
             cpath = run_dir / f"{ckpt}.pt"
             if not (mpath.exists() and cpath.exists()):
                 continue
-            s = score(load_json(mpath), args.metric)
+            s = score(with_pooled(load_json(mpath)), args.metric)
             if s is not None:
                 candidates.append((s, ckpt))
         entry = selection["methods"].setdefault(method, {"runs": {}, "best": None})
@@ -142,7 +174,7 @@ def collect_test(root, selection):
         for seed, run in entry["runs"].items():
             mpath = Path(run["run_dir"]) / "test" / "metrics.json"
             if mpath.exists():
-                seeds[int(seed)] = load_json(mpath)
+                seeds[int(seed)] = with_pooled(load_json(mpath))
         best = None
         if entry.get("best") is not None:
             best = seeds.get(entry["best"]["seed"])
@@ -187,7 +219,7 @@ def write_table(results, selection, path):
         "Bold: the selected best model. In brackets: mean ± sd over every seed's selected "
         "checkpoint.",
         "`quantum links per success` = routing + agent purification + automatic "
-        "purification (`total_links_per_success`).",
+        "purification, pooled over all test episodes (total links / total successes).",
     ]
     path.write_text("\n".join(lines) + "\n")
 

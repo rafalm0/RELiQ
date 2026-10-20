@@ -1,0 +1,100 @@
+Requirement already satisfied: absl-py==2.3.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 1)) (2.3.1)
+Requirement already satisfied: aiohappyeyeballs==2.6.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 2)) (2.6.1)
+Requirement already satisfied: aiohttp==3.13.3 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 3)) (3.13.3)
+Requirement already satisfied: aiosignal==1.4.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 4)) (1.4.0)
+Requirement already satisfied: attrs==25.4.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 5)) (25.4.0)
+Requirement already satisfied: certifi==2026.1.4 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 6)) (2026.1.4)
+Requirement already satisfied: charset-normalizer==3.4.4 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 7)) (3.4.4)
+Requirement already satisfied: cloudpickle==3.1.2 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 8)) (3.1.2)
+Requirement already satisfied: contourpy==1.3.3 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 9)) (1.3.3)
+Requirement already satisfied: cycler==0.12.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 10)) (0.12.1)
+Requirement already satisfied: filelock==3.20.3 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 11)) (3.20.3)
+Requirement already satisfied: fonttools==4.61.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 12)) (4.61.1)
+Requirement already satisfied: frozenlist==1.8.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 13)) (1.8.0)
+Requirement already satisfied: fsspec==2026.1.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 14)) (2026.1.0)
+Requirement already satisfied: geographiclib==2.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 15)) (2.1)
+Requirement already satisfied: geopy==2.4.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 16)) (2.4.1)
+Requirement already satisfied: grpcio==1.76.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 17)) (1.76.0)
+Requirement already satisfied: gymnasium==1.2.3 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 18)) (1.2.3)
+Requirement already satisfied: idna==3.11 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 19)) (3.11)
+Requirement already satisfied: Jinja2==3.1.6 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 20)) (3.1.6)
+Requirement already satisfied: kiwisolver==1.4.9 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 21)) (1.4.9)
+Requirement already satisfied: Markdown==3.10 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 22)) (3.10)
+Requirement already satisfied: MarkupSafe==3.0.3 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 23)) (3.0.3)
+Requirement already satisfied: matplotlib==3.10.8 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 24)) (3.10.8)
+Requirement already satisfied: mpmath==1.3.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 25)) (1.3.0)
+Requirement already satisfied: multidict==6.7.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 26)) (6.7.0)
+Requirement already satisfied: networkx==3.6.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 27)) (3.6.1)
+Requirement already satisfied: numpy==2.4.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 28)) (2.4.1)
+Requirement already satisfied: packaging==25.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 29)) (25.0)
+Requirement already satisfied: pillow==12.1.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 30)) (12.1.0)
+Requirement already satisfied: pip==24.2 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 31)) (24.2)
+Requirement already satisfied: propcache==0.4.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 32)) (0.4.1)
+Requirement already satisfied: protobuf==6.33.4 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 33)) (6.33.4)
+Requirement already satisfied: psutil==7.2.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 34)) (7.2.1)
+Requirement already satisfied: pyparsing==3.3.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 35)) (3.3.1)
+Requirement already satisfied: python-dateutil==2.9.0.post0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 36)) (2.9.0.post0)
+Requirement already satisfied: requests==2.32.5 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 37)) (2.32.5)
+Requirement already satisfied: scipy==1.17.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 38)) (1.17.0)
+Requirement already satisfied: setuptools==80.9.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 39)) (80.9.0)
+Requirement already satisfied: six==1.17.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 40)) (1.17.0)
+Requirement already satisfied: sympy==1.14.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 41)) (1.14.0)
+Requirement already satisfied: tabulate==0.9.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 42)) (0.9.0)
+Requirement already satisfied: tensorboard==2.20.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 43)) (2.20.0)
+Requirement already satisfied: tensorboard-data-server==0.7.2 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 44)) (0.7.2)
+Requirement already satisfied: topohub==1.5.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 45)) (1.5.1)
+Requirement already satisfied: torch==2.9.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (2.9.1)
+Requirement already satisfied: torch-geometric==2.7.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 47)) (2.7.0)
+Requirement already satisfied: tqdm==4.67.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 48)) (4.67.1)
+Requirement already satisfied: typing_extensions==4.15.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 49)) (4.15.0)
+Requirement already satisfied: urllib3==2.6.3 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 50)) (2.6.3)
+Requirement already satisfied: xxhash==3.6.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 51)) (3.6.0)
+Requirement already satisfied: yarl==1.22.0 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from -r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 52)) (1.22.0)
+Requirement already satisfied: farama-notifications>=0.0.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from gymnasium==1.2.3->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 18)) (0.0.6)
+Requirement already satisfied: werkzeug>=1.0.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from tensorboard==2.20.0->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 43)) (3.1.8)
+Requirement already satisfied: nvidia-cuda-nvrtc-cu12==12.8.93 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (12.8.93)
+Requirement already satisfied: nvidia-cuda-runtime-cu12==12.8.90 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (12.8.90)
+Requirement already satisfied: nvidia-cuda-cupti-cu12==12.8.90 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (12.8.90)
+Requirement already satisfied: nvidia-cudnn-cu12==9.10.2.21 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (9.10.2.21)
+Requirement already satisfied: nvidia-cublas-cu12==12.8.4.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (12.8.4.1)
+Requirement already satisfied: nvidia-cufft-cu12==11.3.3.83 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (11.3.3.83)
+Requirement already satisfied: nvidia-curand-cu12==10.3.9.90 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (10.3.9.90)
+Requirement already satisfied: nvidia-cusolver-cu12==11.7.3.90 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (11.7.3.90)
+Requirement already satisfied: nvidia-cusparse-cu12==12.5.8.93 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (12.5.8.93)
+Requirement already satisfied: nvidia-cusparselt-cu12==0.7.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (0.7.1)
+Requirement already satisfied: nvidia-nccl-cu12==2.27.5 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (2.27.5)
+Requirement already satisfied: nvidia-nvshmem-cu12==3.3.20 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (3.3.20)
+Requirement already satisfied: nvidia-nvtx-cu12==12.8.90 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (12.8.90)
+Requirement already satisfied: nvidia-nvjitlink-cu12==12.8.93 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (12.8.93)
+Requirement already satisfied: nvidia-cufile-cu12==1.13.1.3 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (1.13.1.3)
+Requirement already satisfied: triton==3.5.1 in /nfs/speed-scratch/r_albuq/QRL/RELiQ/Reliqvenv/lib/python3.12/site-packages (from torch==2.9.1->-r /speed-scratch/r_albuq/QRL/replica/RELiQ/requirements.txt (line 46)) (3.5.1)
+
+[notice] A new release of pip is available: 24.2 -> 26.2.1
+[notice] To update, run: pip install --upgrade pip
+Starting Script
+[2026-10-14 16:56:46] results: results/best  methods: reliq rt-reliq reliq-ratio  seeds: 0 1 2  device: cuda  jobs: 3
+[2026-10-14 16:56:46] [train] start reliq seed=0
+[2026-10-14 16:56:46] [train] start reliq-ratio seed=0
+[2026-10-14 16:56:46] [train] start rt-reliq seed=0
+experiments/train_best.sh: line 122: 3194540 Killed                  "${PYTHON}" -u src/main.py "${TRAIN_COMMON[@]}" --seed "${seed}" --output-dir "${out}" $(method_flags "$method") ${TRAIN_EXTRA} > "${out}/train.log" 2>&1
+[2026-10-14 16:58:46] [train] FAIL  reliq-ratio seed=0 -> results/best/runs/reliq-ratio/seed0/train.log
+[2026-10-14 16:58:47] [train] start reliq seed=1
+experiments/train_best.sh: line 122: 3194543 Killed                  "${PYTHON}" -u src/main.py "${TRAIN_COMMON[@]}" --seed "${seed}" --output-dir "${out}" $(method_flags "$method") ${TRAIN_EXTRA} > "${out}/train.log" 2>&1
+[2026-10-14 16:59:16] [train] FAIL  rt-reliq seed=0 -> results/best/runs/rt-reliq/seed0/train.log
+[2026-10-14 16:59:16] [train] start rt-reliq seed=1
+experiments/train_best.sh: line 122: 3196656 Killed                  "${PYTHON}" -u src/main.py "${TRAIN_COMMON[@]}" --seed "${seed}" --output-dir "${out}" $(method_flags "$method") ${TRAIN_EXTRA} > "${out}/train.log" 2>&1
+[2026-10-14 16:59:40] [train] FAIL  reliq seed=1 -> results/best/runs/reliq/seed1/train.log
+[2026-10-14 16:59:40] [train] start reliq-ratio seed=1
+experiments/train_best.sh: line 122: 3196859 Killed                  "${PYTHON}" -u src/main.py "${TRAIN_COMMON[@]}" --seed "${seed}" --output-dir "${out}" $(method_flags "$method") ${TRAIN_EXTRA} > "${out}/train.log" 2>&1
+[2026-10-14 17:00:04] [train] FAIL  rt-reliq seed=1 -> results/best/runs/rt-reliq/seed1/train.log
+[2026-10-14 17:00:04] [train] start reliq seed=2
+experiments/train_best.sh: line 122: 3197863 Killed                  "${PYTHON}" -u src/main.py "${TRAIN_COMMON[@]}" --seed "${seed}" --output-dir "${out}" $(method_flags "$method") ${TRAIN_EXTRA} > "${out}/train.log" 2>&1
+[2026-10-14 17:00:26] [train] FAIL  reliq-ratio seed=1 -> results/best/runs/reliq-ratio/seed1/train.log
+[2026-10-14 17:00:26] [train] start rt-reliq seed=2
+experiments/train_best.sh: line 122: 3197931 Killed                  "${PYTHON}" -u src/main.py "${TRAIN_COMMON[@]}" --seed "${seed}" --output-dir "${out}" $(method_flags "$method") ${TRAIN_EXTRA} > "${out}/train.log" 2>&1
+[2026-10-14 17:00:48] [train] FAIL  reliq seed=2 -> results/best/runs/reliq/seed2/train.log
+[2026-10-14 17:00:48] [train] start reliq-ratio seed=2
+experiments/train_best.sh: line 122: 3198784 Killed                  "${PYTHON}" -u src/main.py "${TRAIN_COMMON[@]}" --seed "${seed}" --output-dir "${out}" $(method_flags "$method") ${TRAIN_EXTRA} > "${out}/train.log" 2>&1
+[2026-10-14 17:01:11] [train] FAIL  rt-reliq seed=2 -> results/best/runs/rt-reliq/seed2/train.log
+slurmstepd: error: *** JOB 1460203 ON speed-37 CANCELLED AT 2026-10-15T17:40:34 ***
+slurmstepd: error: Detected 7 oom_kill events in StepId=1460203.batch. Some of the step tasks have been OOM Killed.

@@ -1,0 +1,10 @@
+Starting Script
+[2026-10-15 19:45:15] results: results/best  methods: reliq-ratio  seeds: 0 1 2  device: cuda
+[2026-10-15 19:45:15] trainings at once: 1  evaluations at once: 1  threads/process: 4  memory: 20 GB
+[2026-10-15 19:45:15] time left in this job: 167h
+[2026-10-15 19:45:15] trained: 0 []  to train: 3 [reliq-ratio:0 reliq-ratio:1 reliq-ratio:2]
+[2026-10-15 19:45:15] [train] start reliq-ratio seed=0
+[2026-10-17 09:32:45] [train] done  reliq-ratio seed=0 (37h)
+[2026-10-17 09:32:45] [train] start reliq-ratio seed=1
+[2026-10-19 02:43:12] [train] done  reliq-ratio seed=1 (41h)
+[2026-10-19 02:43:12] [train] start reliq-ratio seed=2

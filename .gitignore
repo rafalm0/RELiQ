@@ -6,3 +6,5 @@ Reliqvenv/
 src/__pycache__/
 
 reports/
+
+results/best/runs/

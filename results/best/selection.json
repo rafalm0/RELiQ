@@ -1,0 +1,18 @@
+{
+  "metric": "average_episode_packets_mean",
+  "minimize": false,
+  "methods": {
+    "reliq": {
+      "runs": {},
+      "best": null
+    },
+    "rt-reliq": {
+      "runs": {},
+      "best": null
+    },
+    "reliq-ratio": {
+      "runs": {},
+      "best": null
+    }
+  }
+}
