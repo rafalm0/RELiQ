@@ -54,6 +54,10 @@ The script trains, selects and evaluates three methods with the RELiQ README rec
 | `reliq` | main baseline, original | none |
 | `rt-reliq` | agent-chosen purification + ratio reward | `--method rt-reliq --max-purification-rounds 3 --reward-type ratio` |
 | `reliq-ratio` | ablation: RELiQ on the ratio reward | `--reward-type ratio` |
+| `rt-reliq-rd` | RT-RELiQ trained with realistic decay (round 2; our training procedure) | `--method rt-reliq --max-purification-rounds 3 --reward-type ratio --use-realistic-decay` |
+| `rt-reliq-rd-cost` | RT-RELiQ, realistic-decay training, fidelity-cost reward | `--method rt-reliq --max-purification-rounds 3 --reward-type fidelity-cost --reward-cost-c 0.1 --reward-floor 0.05 --use-realistic-decay` |
+
+Only the `rt-reliq-rd*` methods train with realistic decay. RELiQ is never changed: it trains with the paper/README recipe (exponential decay). All methods are evaluated identically, with realistic decay. `SEEDS` defaults to `0`, and `METHODS` defaults to all five; finished runs are skipped.
 
 The phases are `train`, `validate`, `select`, `test` and `report`. Every run's
 `model_best.pt` / `model_last.pt` is scored on validation topologies
@@ -133,3 +137,16 @@ Run them from any environment that has both.
 ```bash
 PYTHONPATH=src python tests/test_purification_action_space.py
 ```
+
+### Fidelity-cost reward (`--reward-type fidelity-cost`)
+
+| outcome | reward |
+| --- | --- |
+| end-to-end entanglement created (F > 0.5) | `max(F − c · rounds / h_min, floor)` |
+| reached the target, no entanglement | `floor` |
+| dropped before the target | `0` |
+
+`rounds` are the purification rounds actually performed for the request (one extra link
+each), and `h_min` is the request's shortest hop count. Defaults: `c = 0.1`
+(`--reward-cost-c`, `COST_C`) and `floor = 0.05` (`--reward-floor`, `REWARD_FLOOR`).
+Compared with RELiQ's 0.5, the floor makes a success worth at least 10× a failed arrival.

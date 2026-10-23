@@ -27,13 +27,15 @@ from pathlib import Path
 
 import numpy as np
 
-METHOD_ORDER = ["reliq", "rt-reliq", "reliq-ratio"]
+METHOD_ORDER = ["reliq", "rt-reliq", "rt-reliq-rd", "rt-reliq-rd-cost", "reliq-ratio"]
 METHOD_LABEL = {
     "reliq": "RELiQ",
     "rt-reliq": "RT-RELiQ",
+    "rt-reliq-rd": "RT-RELiQ (realistic-decay training)",
+    "rt-reliq-rd-cost": "RT-RELiQ (realistic decay, fidelity-cost reward)",
     "reliq-ratio": "RELiQ + ratio reward",
 }
-METHOD_COLOR = {"reliq": "#d95f02", "rt-reliq": "#1b9e77", "reliq-ratio": "#7570b3"}
+METHOD_COLOR = {"reliq": "#d95f02", "rt-reliq": "#1b9e77", "rt-reliq-rd": "#66a61e", "rt-reliq-rd-cost": "#1f78b4", "reliq-ratio": "#7570b3"}
 CHECKPOINTS = ["model_best", "model_last"]
 
 # (metric key, label, higher is better)

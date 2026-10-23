@@ -13,7 +13,7 @@ from env.entanglementenv import EntanglementEnv
 from env.quantum_network import QuantumNetwork
 
 
-def make_env(max_purification_rounds, purification_cost_weight=0.0, reward_type="fidelity"):
+def make_env(max_purification_rounds, purification_cost_weight=0.0, reward_type="fidelity", **reward_kwargs):
     network = QuantumNetwork(
         n_nodes=10,
         n_nodes_connected=10,
@@ -31,6 +31,7 @@ def make_env(max_purification_rounds, purification_cost_weight=0.0, reward_type=
         max_purification_rounds=max_purification_rounds,
         purification_cost_weight=purification_cost_weight,
         reward_type=reward_type,
+        **reward_kwargs,
     )
     env.reset()
     return env
@@ -191,6 +192,21 @@ def test_ratio_reward_bounded():
     print("ok  ratio reward is bounded by 1")
 
 
+def test_fidelity_cost_reward_values():
+    """fidelity-cost: every terminal reward is 0 (drop), the floor (failed arrival) or a success in [floor, 1]."""
+    floor = 0.05
+    for p in (0, 3):
+        env = make_env(p, reward_type="fidelity-cost", reward_cost_c=0.1, reward_floor=floor)
+        r = _random_rollout(env, 60, seed=10 + p)
+        # -reward_idle_punishment is upstream's per-step idle penalty, not a terminal
+        # reward (training uses --no-idle-action, so it never occurs there)
+        idle = np.isclose(r, -env.reward_idle_punishment)
+        nonzero = r[(r != 0) & ~idle]
+        assert len(nonzero) > 0
+        assert np.all(nonzero >= floor - 1e-9) and np.all(nonzero <= 1 + 1e-9), (nonzero.min(), nonzero.max())
+    print("ok  fidelity-cost reward values are 0, floor or a success in [floor, 1]")
+
+
 if __name__ == "__main__":
     test_action_space_size()
     test_encode_decode_roundtrip()
@@ -200,4 +216,5 @@ if __name__ == "__main__":
     test_auto_distillation_disabled_is_noop()
     test_reliq_default_never_writes_schedule()
     test_ratio_reward_bounded()
+    test_fidelity_cost_reward_values()
     print("\nall checks passed")

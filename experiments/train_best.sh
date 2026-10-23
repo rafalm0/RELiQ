@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 # Train, select and evaluate the best model of each method, then plot them.
 #
-#   reliq        RELiQ as published: original reward, automatic purification  (main baseline)
-#   rt-reliq     RT-RELiQ: agent picks purification rounds per hop, ratio reward
+#   reliq        RELiQ as published: original reward, automatic purification, exponential
+#                training decay (paper/README recipe). Main baseline - never changed.
+#   rt-reliq     RT-RELiQ: agent picks purification rounds per hop, ratio reward, trained
+#                with the same exponential decay as RELiQ (round 1)
+#   rt-reliq-rd  RT-RELiQ trained with realistic decay (round 2). The training decay is
+#                part of our method; it is evaluated exactly like every other method.
+#   rt-reliq-rd-cost  RT-RELiQ, realistic-decay training, fidelity-cost reward:
+#                success pays max(F - c * rounds / h_min, floor), failed arrival pays
+#                floor, drop pays 0 (c = COST_C, floor = REWARD_FLOOR)
 #   reliq-ratio  RELiQ trained on the ratio reward (ablation: separates the effect of
 #                the reward from the effect of letting the agent purify)
 #
@@ -39,7 +46,7 @@
 # Settings (environment variables):
 #     RESULTS_DIR     output root                                  (results/best)
 #     METHODS         methods to run                               ("reliq rt-reliq reliq-ratio")
-#     SEEDS           training seeds per method                    ("0 1 2")
+#     SEEDS           training seeds per method                    ("0"; round 1 used "0 1 2")
 #     DEVICE          cuda or cpu                                  (cuda)
 #     JOBS            trainings run at the same time (one GPU)     (1)
 #     EVAL_JOBS       evaluations run at the same time             (JOBS)
@@ -49,6 +56,8 @@
 #     EVAL_RESERVE_HOURS hours kept free for the evaluation phases (12)
 #     TOTAL_STEPS     training steps per run                       (15000000, as in the README)
 #     RT_ROUNDS       max purification rounds for RT-RELiQ         (3)
+#     COST_C          c of the fidelity-cost reward                (0.1)
+#     REWARD_FLOOR    floor of the fidelity-cost reward            (0.05)
 #     VAL_OFFSET      first validation topology index              (500)
 #     VAL_EPISODES    validation episodes per checkpoint           (50)
 #     TEST_EPISODES   test episodes                                (100)
@@ -66,8 +75,8 @@ cd "${REPO}" || exit 1
 export PYTHONPATH="${PYTHONPATH:-}:src"
 
 RESULTS_DIR="${RESULTS_DIR:-results/best}"
-METHODS="${METHODS:-reliq rt-reliq reliq-ratio}"
-SEEDS="${SEEDS:-0 1 2}"
+METHODS="${METHODS:-reliq rt-reliq reliq-ratio rt-reliq-rd rt-reliq-rd-cost}"
+SEEDS="${SEEDS:-0}"
 DEVICE="${DEVICE:-cuda}"
 JOBS="${JOBS:-1}"
 EVAL_JOBS="${EVAL_JOBS:-${JOBS}}"
@@ -77,6 +86,8 @@ RUN_HOURS="${RUN_HOURS:-}"
 EVAL_RESERVE_HOURS="${EVAL_RESERVE_HOURS:-12}"
 TOTAL_STEPS="${TOTAL_STEPS:-15000000}"
 RT_ROUNDS="${RT_ROUNDS:-3}"
+COST_C="${COST_C:-0.1}"
+REWARD_FLOOR="${REWARD_FLOOR:-0.05}"
 VAL_OFFSET="${VAL_OFFSET:-500}"
 VAL_EPISODES="${VAL_EPISODES:-50}"
 TEST_EPISODES="${TEST_EPISODES:-100}"
@@ -91,7 +102,7 @@ PYTHON="${PYTHON:-python}"
 # silently train the wrong thing.
 if (( $# > 0 )); then echo "train_best.sh takes no arguments (got: $*); use e.g. METHODS=reliq" >&2; exit 1; fi
 for m in ${METHODS}; do
-  case "$m" in reliq|rt-reliq|reliq-ratio) ;; *) echo "unknown method '$m' in METHODS (reliq, rt-reliq, reliq-ratio)" >&2; exit 1 ;; esac
+  case "$m" in reliq|rt-reliq|reliq-ratio|rt-reliq-rd|rt-reliq-rd-cost) ;; *) echo "unknown method '$m' in METHODS (reliq, rt-reliq, reliq-ratio, rt-reliq-rd, rt-reliq-rd-cost)" >&2; exit 1 ;; esac
 done
 
 # --- memory guard ---------------------------------------------------------------------
@@ -143,6 +154,8 @@ TRAIN_COMMON=(
   # short sanity evaluation at the end of training; selection and test use phases 2-4
   --eval-episodes=10
 )
+# Training decay per method: only rt-reliq-rd trains with realistic decay.
+train_decay() { [[ "$1" == rt-reliq-rd* ]] && echo realistic || echo exponential; }
 
 # Evaluation flags from the RELiQ README (model architecture and method are restored
 # from the checkpoint).
@@ -161,6 +174,8 @@ method_flags() {
   case "$1" in
     reliq)       echo "" ;;
     rt-reliq)    echo "--method rt-reliq --max-purification-rounds ${RT_ROUNDS} --reward-type ratio" ;;
+    rt-reliq-rd) echo "--method rt-reliq --max-purification-rounds ${RT_ROUNDS} --reward-type ratio --use-realistic-decay" ;;
+    rt-reliq-rd-cost) echo "--method rt-reliq --max-purification-rounds ${RT_ROUNDS} --reward-type fidelity-cost --reward-cost-c ${COST_C} --reward-floor ${REWARD_FLOOR} --use-realistic-decay" ;;
     reliq-ratio) echo "--reward-type ratio" ;;
     *) echo "unknown method $1" >&2; exit 1 ;;
   esac
@@ -268,6 +283,22 @@ log "trainings at once: ${JOBS}  evaluations at once: ${EVAL_JOBS}  threads/proc
 if [[ -n "${DEADLINE}" ]]; then
   log "time left in this job: $(( (DEADLINE - $(date +%s)) / 3600 ))h"
 fi
+# A run folder trained with the other decay model belongs to another round: stop before
+# skipping or retraining anything in it.
+if has_phase train; then
+  for seed in ${SEEDS}; do
+    for method in ${METHODS}; do
+      cfg="$(run_dir "$method" "$seed")/config.json"
+      [[ -f "${cfg}" ]] || continue
+      was="exponential"; grep -q '"use_realistic_decay": true' "${cfg}" && was="realistic"
+      if [[ "${was}" != "$(train_decay "$method")" ]]; then
+        echo "ERROR: $(dirname "${cfg}") was trained with ${was} decay but ${method} trains with $(train_decay "$method") decay" >&2
+        exit 1
+      fi
+    done
+  done
+fi
+
 done_runs=(); todo_runs=()
 for seed in ${SEEDS}; do
   for method in ${METHODS}; do

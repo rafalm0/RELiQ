@@ -148,6 +148,8 @@ class EntanglementEnv(NetworkEnv):
         max_purification_rounds: int = 0,
         purification_cost_weight: float = 0.0,
         reward_type: str = "fidelity",
+        reward_cost_c: float = 0.1,
+        reward_floor: float = 0.05,
     ):
         """
         Initialize the environment.
@@ -275,8 +277,12 @@ class EntanglementEnv(NetworkEnv):
         self.max_purification_rounds = max(0, int(max_purification_rounds))
         self.purification_levels = self.max_purification_rounds + 1
         self.purification_cost_weight = purification_cost_weight
-        assert reward_type in ("fidelity", "ratio"), reward_type
+        assert reward_type in ("fidelity", "ratio", "fidelity-cost"), reward_type
         self.reward_type = reward_type
+        # fidelity-cost reward: success pays max(F - c * rounds / h_min, floor),
+        # arrived-but-failed pays floor, dropped pays 0
+        self.reward_cost_c = reward_cost_c
+        self.reward_floor = reward_floor
         n_actions = 1 + self.network.neighbor_count * self.purification_levels
 
         self.action_space = Discrete(n_actions, start=0)
@@ -441,7 +447,7 @@ class EntanglementEnv(NetworkEnv):
             shortest_path_weight=1,
             creation_step=creation_step,
         )
-        if self.reward_type == "ratio":
+        if self.reward_type in ("ratio", "fidelity-cost"):
             # shortest hop count of this request; normalises the ratio reward so that a
             # shortest-path delivery without purification earns the upstream reward
             try:
@@ -1224,6 +1230,20 @@ class EntanglementEnv(NetworkEnv):
                             1,
                         )
                         reward[i] *= getattr(request, "min_hops", 1) / links_used
+                    elif self.reward_type == "fidelity-cost":
+                        # Purification rounds actually performed for this request (one
+                        # extra link each), normalised by the request's shortest hop
+                        # count, cost c fidelity points. Arriving without an end-to-end
+                        # entanglement only earns the small floor, instead of upstream's 0.5.
+                        if has_reached_target:
+                            rounds = self.agent_purification_resources[i]
+                            reward[i] = max(
+                                request.link.fidelity
+                                - self.reward_cost_c * rounds / getattr(request, "min_hops", 1),
+                                self.reward_floor,
+                            )
+                        else:
+                            reward[i] = self.reward_floor
                 else:
                     reward[i] = 0
 

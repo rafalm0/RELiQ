@@ -207,15 +207,30 @@ parser.add_argument(
 parser.add_argument(
     "--reward-type",
     type=str,
-    choices=["fidelity", "ratio"],
+    choices=["fidelity", "ratio", "fidelity-cost"],
     help=(
         "fidelity (default, upstream): on reaching the target the agent gets "
         "max(fidelity, 0.5). ratio: that value times h_min / links, where links are the "
         "quantum links the request consumed (routing + its own purification) and h_min "
         "the shortest hop count of the request, so fidelity per link used, on the same "
-        "0.5-1 scale. Available for both methods."
+        "0.5-1 scale. fidelity-cost: on success max(F - c * rounds / h_min, floor), where "
+        "rounds are the purification rounds actually performed and h_min the shortest hop "
+        "count; arriving without an entanglement earns floor; dropped requests earn 0 "
+        "(see --reward-cost-c, --reward-floor). Available for both methods."
     ),
     default="fidelity",
+)
+parser.add_argument(
+    "--reward-cost-c",
+    type=float,
+    help="fidelity-cost reward: fidelity points charged per purification round per shortest-path hop.",
+    default=0.1,
+)
+parser.add_argument(
+    "--reward-floor",
+    type=float,
+    help="fidelity-cost reward: reward for reaching the target without an end-to-end entanglement (also the minimum reward of a success).",
+    default=0.05,
 )
 parser.add_argument(
     "--eval-seed-offset",
@@ -733,6 +748,8 @@ if args.config_load_path is not None:
             "method",
             "max_purification_rounds",
             "reward_type",
+            "reward_cost_c",
+            "reward_floor",
         ]
         for considered_config_value in considered_config_values:
             if considered_config_value in config:
@@ -779,7 +796,8 @@ if args.model_load_path and not args.model_load_no_args:
     # Added by RT-RELiQ. Restored only when present, so checkpoints written by the
     # original code (which lack these keys) still load: filter_dict raises KeyError on
     # missing keys. A checkpoint without them is a RELiQ checkpoint, i.e. the defaults.
-    for key in ("method", "max_purification_rounds", "purification_cost_weight", "reward_type"):
+    for key in ("method", "max_purification_rounds", "purification_cost_weight", "reward_type",
+                "reward_cost_c", "reward_floor"):
         if key in loaded_dict["args"]:
             loaded_model_arg_values[key] = loaded_dict["args"][key]
     loaded_model_arg_values.update({"policy": "trained"})
@@ -894,6 +912,8 @@ if args.env_type == "quantum":
             max_purification_rounds=args.max_purification_rounds,
             purification_cost_weight=args.purification_cost_weight,
             reward_type=args.reward_type,
+            reward_cost_c=args.reward_cost_c,
+            reward_floor=args.reward_floor,
         )
 
     env = create_entanglement_env()
